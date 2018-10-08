@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Apps>
+    <App>
+        <Name>Core</Name>
+        <Url>Core/Core.zip</Url>
+        <Version>1.0.0</Version>
+    </App>
+    <App>
+        <Name>BurstWallet</Name>
+        <Url>BRS/BRS.zip</Url>
+        <Version>2.2.3</Version>
+    </App>
+    <App>
+        <Name>MariaDB</Name>
+        <Url>MariaDB/MariaDb.zip</Url>
+        <Version>10.1.29</Version>
+    </App>
+    <App>
+        <Name>Java</Name>
+        <Url>https://www.java.com/download/</Url>
+        <Version>1.8.0</Version>
+    </App>
+</Apps>
