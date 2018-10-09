@@ -5,6 +5,7 @@ import (
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilog"
 	"github.com/asticode/go-astilectron-bootstrap"
+	"github.com/HeosSacer/Easy2Burst/internal"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"time"
@@ -21,7 +22,7 @@ var (
 	w       *astilectron.Window
 )
 
-func startUI () {
+func startUI (chan internal.Status) {
 	// Init
 	flag.Parse()
 	astilog.FlagInit()

@@ -1,58 +1,53 @@
 package internal
 
 import (
-	"fmt"
 	"path/filepath"
 	"os"
-	"os/exec"
-	"strings"
-	"strconv"
 	"log"
 )
+
+type Status struct {
+	Name string
+	Message string
+	Progress  string
+	Size	string
+}
 
 var (
 	toolPath = filepath.ToSlash(os.Getenv("APPDATA") + "/Easy2Burst/")
 	downloadCachePath = toolPath + "downloadCache/"
 	relevantFileNames = []string{"AppInfo.xml", "BurstWallet", "MariaDB"}
 	downloadUrl = "https://download.cryptoguru.org/burst/qbundle/Easy2Burst/"
-	logFile, errLogger = os.OpenFile("startup.log", os.O_WRONLY|os.O_CREATE, 0644)
+	logFile, errLogger = os.OpenFile(toolPath + "startup.log", os.O_WRONLY|os.O_CREATE, 0644)
+	stat = Status{
+		Name: "starting",
+		Message: "",
+		Progress: "",
+		Size: "",
+	}
 )
 
-func CheckTools() {
+func CheckTools(statusCh chan Status) {
 	//set logs
 	log.SetOutput(logFile)
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	//test case
-	log.Print("Started Easy2Go Setup")
-
-	if NeedsJava("1.8.0"){
-		fmt.Print("TODO")
-	}
+	log.Print("Started Easy2Burst Setup")
+	statusCh <- stat
 	listOfMissingFiles := checkFileExistences()
-	fmt.Print(listOfMissingFiles)
-	processMissingFiles(listOfMissingFiles)
-	if errLogger != nil {
-		log.Fatal(errLogger)
+	if len(listOfMissingFiles) > 0{
+		stat.Name = "startSetup"
+		statusCh <- stat
+		log.Printf("Files %s missing.", listOfMissingFiles)
+		processFiles(listOfMissingFiles, statusCh)
+		if errLogger != nil {
+			log.Fatal(errLogger)
+		}
 	}
-	//defer to close when you're done with it, not because you think it's idiomatic!
+	stat.Name = "setupFinished"
+	statusCh <- stat
+	CheckForUpdates(statusCh)
 	defer logFile.Close()
-}
-
-func NeedsJava(javaVersion string) bool{
-	cmd := exec.Command("java", "-version")
-	cmd.Env = append(os.Environ())
-	out, err := cmd.CombinedOutput()
-	currentJavaVersion := strings.Split(string(out[:])," ")[2][1:9]
-	if err != nil {
-		log.Fatal(err)
-	}
-	javaVersionNum, _ := strconv.ParseFloat(javaVersion[0:3], 32)
-	currentJavaVersionNum, _ := strconv.ParseFloat(currentJavaVersion[0:3],32)
-	if javaVersionNum > currentJavaVersionNum{
-		return true
-	}else {
-		return false
-	}
 }
 
 func checkFileExistences() []string {
@@ -65,13 +60,13 @@ func checkFileExistences() []string {
 	return missingFiles
 }
 
-func processMissingFiles(missingFiles []string) {
+func processFiles(missingFiles []string, statusCh chan Status) {
 	for _, fileName := range missingFiles {
 		if fileName != "AppInfo.xml" {
-			DownloadFile(downloadCachePath + fileName + ".zip", downloadUrl + fileName + ".zip")
-			unzip(downloadCachePath + fileName + ".zip", toolPath + fileName)
+			DownloadFile(downloadCachePath + fileName + ".zip", downloadUrl + fileName + ".zip", statusCh)
+			unzip(downloadCachePath + fileName + ".zip", toolPath + fileName, statusCh)
 		} else{
-			DownloadFile(downloadCachePath + fileName, downloadUrl + fileName)
+			DownloadFile(downloadCachePath + fileName, downloadUrl + fileName, statusCh)
 			CopyFile(downloadCachePath + fileName, toolPath + fileName)
 		}
 	}
