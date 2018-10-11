@@ -14,6 +14,22 @@ The easy to start wallet for burst.
 - account-manager
 - using electron with the newest web technologies
 
+### Roadmap
+
+- [x] automatic updater (updates everything in the background and applies updates at application restart)
+- [x] fancy ui
+- [ ] integration of burst-wallet
+- [ ] impementation of fast blockchain bootstrap
+- [ ] beta release and community outreach
+- [ ] crash reports to accelerate wallet development
+- [ ] account manager
+- [ ] nice interface promoting other burst related software/projects
+- [ ] beta and community feedback implementation
+- [ ] ... (community requested features)
+- [ ] high quality of code and extensive code reviewing
+- [ ] release
+
+
 ### For Collaborators
 1. Install golang version > 1.11
 
