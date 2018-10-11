@@ -18,7 +18,6 @@ var (
 	downloadCachePath = toolPath + "downloadCache/"
 	relevantFileNames = []string{"AppInfo.xml", "BurstWallet", "MariaDB"}
 	downloadUrl = "https://download.cryptoguru.org/burst/qbundle/Easy2Burst/"
-	logFile, errLogger = os.OpenFile(toolPath + "startup.log", os.O_WRONLY|os.O_CREATE, 0644)
 	stat = Status{
 		Name: "starting",
 		Message: "",
@@ -29,6 +28,9 @@ var (
 
 func CheckTools(statusCh chan Status) {
 	//set logs
+	os.Remove(toolPath + "startup.log")
+	logFile, _ := os.OpenFile(toolPath + "startup.log", os.O_WRONLY|os.O_CREATE, 0644)
+	defer logFile.Close()
 	log.SetOutput(logFile)
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	//test case
@@ -40,14 +42,10 @@ func CheckTools(statusCh chan Status) {
 		statusCh <- stat
 		log.Printf("Files %s missing.", listOfMissingFiles)
 		processFiles(listOfMissingFiles, statusCh)
-		if errLogger != nil {
-			log.Fatal(errLogger)
-		}
 	}
 	stat.Name = "setupFinished"
 	statusCh <- stat
 	CheckForUpdates(statusCh)
-	defer logFile.Close()
 }
 
 func checkFileExistences() []string {

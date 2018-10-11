@@ -6,9 +6,7 @@ import (
 	"github.com/asticode/go-astilog"
 	"github.com/asticode/go-astilectron-bootstrap"
 	"github.com/HeosSacer/Easy2Burst/internal"
-	"encoding/json"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // Constants
@@ -18,7 +16,7 @@ const htmlAbout = `Easy2Burst Project.`
 var (
 	AppName string
 	BuiltAt string
-	debug   = flag.Bool("d", false, "enables the debug mode")
+	debug   = true
 	w       *astilectron.Window
 )
 
@@ -26,7 +24,6 @@ func startUI (chan internal.Status) {
 	// Init
 	flag.Parse()
 	astilog.FlagInit()
-
 	// Run bootstrap
 	astilog.Debugf("Running app built at %s", BuiltAt)
 	if err := bootstrap.Run(bootstrap.Options{
@@ -37,40 +34,7 @@ func startUI (chan internal.Status) {
 			AppIconDarwinPath:  "resources/icon.icns",
 			AppIconDefaultPath: "resources/icon.png",
 		},
-		Debug: *debug,
-		MenuOptions: []*astilectron.MenuItemOptions{{
-			Label: astilectron.PtrStr("File"),
-			SubMenu: []*astilectron.MenuItemOptions{
-				{
-					Label: astilectron.PtrStr("About"),
-					OnClick: func(e astilectron.Event) (deleteListener bool) {
-						if err := bootstrap.SendMessage(w, "about", htmlAbout, func(m *bootstrap.MessageIn) {
-							// Unmarshal payload
-							var s string
-							if err := json.Unmarshal(m.Payload, &s); err != nil {
-								astilog.Error(errors.Wrap(err, "unmarshaling payload failed"))
-								return
-							}
-							astilog.Infof("About modal has been displayed and payload is %s!", s)
-						}); err != nil {
-							astilog.Error(errors.Wrap(err, "sending about event failed"))
-						}
-						return
-					},
-				},
-				{Role: astilectron.MenuItemRoleClose},
-			},
-		}},
-		OnWait: func(_ *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
-			w = ws[0]
-			go func() {
-				time.Sleep(5 * time.Second)
-				if err := bootstrap.SendMessage(w, "check.out.menu", "Don't forget to check out the menu!"); err != nil {
-					astilog.Error(errors.Wrap(err, "sending check.out.menu event failed"))
-				}
-			}()
-			return nil
-		},
+		Debug: debug,
 		RestoreAssets: RestoreAssets,
 		Windows: []*bootstrap.Window{{
 			Homepage:       "index.html",
