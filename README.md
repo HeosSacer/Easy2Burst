@@ -28,7 +28,7 @@ $ go get -u github.com/asticode/go-astilectron-bundler/...
 $ go get -u github.com/HeosSacer/Easy2Burst
 ```
 
-4. Use the *go-stilectron-bundler* to create binarys into *.../Easy2Burst/output*.
+4. Use the *go-astilectron-bundler* to create binarys into *.../Easy2Burst/output*.
 ``` shell
 $ cd .../go/github.com/HeosSacer/Easy2Burst
 $ ./go/bin/astilectron-bundler.exe -v
@@ -44,4 +44,5 @@ $ ./go/bin/astilectron-bundler.exe -v
         {"arch": "amd64", "os": "windows"},
         {"arch": "amd64", "os": "darwin"},
         {"arch": "386", "os": "linux"}]
+}
 ```
