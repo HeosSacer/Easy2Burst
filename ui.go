@@ -7,6 +7,7 @@ import (
 	"github.com/asticode/go-astilectron-bootstrap"
 	"github.com/HeosSacer/Easy2Burst/internal"
 	"github.com/pkg/errors"
+	"time"
 )
 
 // Constants
@@ -20,7 +21,7 @@ var (
 	w       *astilectron.Window
 )
 
-func startUI (chan internal.Status) {
+func startUI (statusCh chan internal.Status) {
 	// Init
 	flag.Parse()
 	astilog.FlagInit()
@@ -35,6 +36,20 @@ func startUI (chan internal.Status) {
 			AppIconDefaultPath: "resources/icon.png",
 		},
 		Debug: debug,
+		OnWait: func(_ *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
+			w = ws[0]
+			go internal.StartUiManager(statusCh, w)
+			if err := bootstrap.SendMessage(w, "starting", "0%;"); err != nil {
+				astilog.Error(errors.Wrap(err, "sending check.out.menu event failed"))
+			}
+			go func() {
+				time.Sleep(5 * time.Second)
+				if err := bootstrap.SendMessage(w, "check.out.menu", "Don't forget to check out the menu!"); err != nil {
+					astilog.Error(errors.Wrap(err, "sending check.out.menu event failed"))
+				}
+			}()
+			return nil
+		},
 		RestoreAssets: RestoreAssets,
 		Windows: []*bootstrap.Window{{
 			Homepage:       "index.html",

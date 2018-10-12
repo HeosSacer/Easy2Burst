@@ -20,8 +20,8 @@ var (
 	downloadUrl = "https://download.cryptoguru.org/burst/qbundle/Easy2Burst/"
 	stat = Status{
 		Name: "starting",
-		Message: "",
-		Progress: "",
+		Message: "Starting Setup...",
+		Progress: "0%",
 		Size: "",
 	}
 )

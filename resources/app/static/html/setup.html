@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Burst Rocket</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <style>
     body {
         min-height: 100vh;
@@ -12,6 +13,17 @@
         background-image: -webkit-linear-gradient(45deg, #3f3251 2%, #002025 100%);
         background-image: linear-gradient(45deg, #3f3251 2%, #002025 100%);
         overflow: hidden;
+    }
+
+    .w3-light-grey{
+        position: absolute;
+        top: 61%;
+        width: calc(40%);
+        max-height: 5%;
+        z-index: 1000;
+        left: 28%;
+        text-align: center;
+        white-space: nowrap;
     }
 
     .rocket {
@@ -275,6 +287,9 @@
 </head>
 
 <body>
+<div class="w3-light-grey" id="downloadContainer" style="visibility: hidden">
+    <div class="w3-container" id="progressBar" style="max-height:5%; width:0%; background-color: #00579d">0%</div>
+</div>
 <div class="rocket">
     <div class="rocket-body">
         <div class="body"></div>
@@ -305,4 +320,20 @@
     </ul>
 </div>
 </body>
+<script>
+    function displayDownload(displayString, progress) {
+        downloadCont = document.getElementById("downloadContainer");
+        progressBar = document.getElementById("progressBar");
+        progressBar.innerText = displayString;
+        progressBar.style.width = progress;
+        downloadCont.style.visibility = "visible";
+    }
+    function stopDisplayDownload() {
+        downloadCont = document.getElementById("downloadContainer");
+        progressBar = document.getElementById("progressBar");
+        downloadCont.style.visibility = "hidden";
+        progressBar.innerText = "";
+        progressBar.style.width = "0%";
+    }
+</script>
 </html>

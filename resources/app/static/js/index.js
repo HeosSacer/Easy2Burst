@@ -18,9 +18,20 @@ let index = {
     listen: function() {
         astilectron.onMessage(function(message) {
             switch (message.name) {
-                case "about":
-                    index.about(message.payload);
-                    return {payload: "payload"};
+                case "downloadMissing":
+                    webview = document.getElementById("mainScreen");
+                    args = message.payload.split(";")
+                    argString = `displayDownload("${args[0]}","${args[1]}");`;
+                    webview.executeJavaScript(argString);
+                    break;
+                case "downloadFinished":
+                    webview = document.getElementById("mainScreen");
+                    webview.executeJavaScript(`stopDisplayDownload()`);
+                    break;
+                case "setupFinished":
+                    var startButton = document.getElementById("StartButton");
+                    startButton.innerText = "Start Wallet";
+                    index.startWalletEvent();
                     break;
                 case "check.out.menu":
                     asticode.notifier.info(message.payload);
@@ -38,35 +49,9 @@ let index = {
     },
     startEvent: function(){
         var startButton = document.getElementById("StartButton");
-        var mainView = document.getElementById("mainScreen");
-        startButton.onclick = function () {
-            startButton = document.getElementById("StartButton");
-            if (startButton.innerText == "Start Wallet"){
-                let message = {"name": "startEvent"};
-                astilectron.sendMessage(message);
-                mainView.style.opacity = 0;
-                setTimeout(function () {
-                    mainView.src = "static/html/loadscreen.html";
-                    setTimeout(function () {
-                        mainView.style.opacity = 1;
-                    }, 500);
-                }, 500);
-                startButton.innerText = "Stop Wallet";
-                startButton.className = "btn btn-outline-warning";
-            }
-            else{
-                let message = {"name": "stopEvent"};
-                astilectron.sendMessage(message);
-                mainView.style.opacity = 0;
-                setTimeout(function () {
-                    mainView.src = "static/html/stoppingscreen.html";
-                    setTimeout(function () {
-                        mainView.style.opacity = 1;
-                    }, 500);
-                }, 500);
-                startButton.disabled = true;
-            }
-        }
+        startButton.onclick = function (){
+            index.startWalletEvent();
+        };
     },
 
     modalEvent: function(){
@@ -90,6 +75,35 @@ let index = {
             if (event.target == modal) {
                 modal.style.display = "none";
             }
+        }
+    },
+    startWalletEvent: function(){
+        var mainView = document.getElementById("mainScreen");
+        var startButton = document.getElementById("StartButton");
+        if (startButton.innerText == "Start Wallet"){
+            let message = {"name": "startEvent"};
+            astilectron.sendMessage(message);
+            mainView.style.opacity = 0;
+            setTimeout(function () {
+                mainView.src = "static/html/loadscreen.html";
+                setTimeout(function () {
+                    mainView.style.opacity = 1;
+                }, 500);
+            }, 500);
+            startButton.innerText = "Stop Wallet";
+            startButton.className = "btn btn-outline-warning";
+        }
+        else{
+            let message = {"name": "stopEvent"};
+            astilectron.sendMessage(message);
+            mainView.style.opacity = 0;
+            setTimeout(function () {
+                mainView.src = "static/html/stoppingscreen.html";
+                setTimeout(function () {
+                    mainView.style.opacity = 1;
+                }, 500);
+            }, 500);
+            startButton.disabled = true;
         }
     },
 };
