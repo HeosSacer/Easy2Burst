@@ -98,12 +98,6 @@ func checkBurstDB(){
 		if err != nil{
 			log.Fatal(err)
 		}
-		cmd.Env = append(os.Environ())
-		out, err = cmd.CombinedOutput()
-		log.Print(string(out))
-		if err != nil{
-			log.Fatal(err)
-		}
 	}
 }
 
