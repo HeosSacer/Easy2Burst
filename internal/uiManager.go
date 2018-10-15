@@ -22,7 +22,7 @@ func StartUiManager(statusCh chan Status, window *astilectron.Window){
 		for{
 			status := <-statusCh
 			switch status.Name {
-			case "startSetup":
+			case "setupFinished":
 				//TODO
 			case "fatalError":
 				break ControlLoop

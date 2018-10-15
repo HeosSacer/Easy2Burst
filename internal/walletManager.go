@@ -1,5 +1,5 @@
-package main
+package internal
 
-func main() {
-	$END$
+func walletManager() {
+	
 }

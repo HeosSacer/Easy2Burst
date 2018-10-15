@@ -1,6 +1,4 @@
-@echo off
 
-:: BatchGotAdmin (Run as Admin code starts)
 REM  --> Check for permissions
 >nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
 
@@ -23,9 +21,7 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :: BatchGotAdmin (Run as Admin code ends)
 
-@echo off
-:: Article: http://www.techgainer.com/create-batch-file-automatically-run-administrator
-:: Your code starts from here
+%~dp0/mysqld.exe -uroot
+%~dp0/mysql.exe -uroot < {PATH_TO_SQL_SCRIPT}
 
-mysql_install_db.exe --datadir=C:\burstDB --service=burstwallet --password=burstwallet
-pause
+:: TO Replace string {PATH_TO_SQL_SCRIPT}
