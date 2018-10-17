@@ -3,7 +3,6 @@ Thumbs.db
 .idea/
 resources/app/static/dec
 re
-message.go
 bind*
 output
 windows.syso
