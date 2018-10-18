@@ -14,7 +14,7 @@ var(
 	Log *log.Logger
 )
 
-func StartUiManager(statusCh chan Status, window *astilectron.Window){
+func StartUiManager(statusCh chan Status, command chan string, window *astilectron.Window){
 	os.Remove(toolPath + "ui.log")
 	logFile, _ := os.OpenFile(toolPath + "ui.log", os.O_WRONLY|os.O_CREATE, 0644)
 	Log = log.New(logFile, "", log.LstdFlags|log.Lshortfile)

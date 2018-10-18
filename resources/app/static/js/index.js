@@ -33,8 +33,12 @@ let index = {
                     startButton.innerText = "Start Wallet";
                     index.startWalletEvent();
                     break;
-                case "check.out.menu":
-                    asticode.notifier.info(message.payload);
+                case "walletStarted":
+                    var mainView = document.getElementById("mainScreen");
+                    var startButton = document.getElementById("StartButton");
+                    mainView.src = "http://127.0.0.1:8125";
+                    startButton.innerText = "Stop Wallet";
+                    startButton.className = "btn btn-outline-warning";
                     break;
             }
         });

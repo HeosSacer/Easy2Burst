@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilectron-bootstrap"
 	"log"
@@ -11,14 +10,14 @@ import (
 func handleMessages(w *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 	switch m.Name {
 	case "exitEvent":
+		commandCh <- "stopWallet"
 		w.Close()
-		os.Exit(0)
 	case "startEvent":
-		//TODO
+		commandCh <- "startWallet"
 	case "stopEvent":
-		//TODO
+		commandCh <- "stopWallet"
 	case "bootstrapEvent":
-		//TODO
+		commandCh <- "bootstrapChain"
 	default:
 		log.Printf("Received unhandled message from ui %s", m.Name)
 	}

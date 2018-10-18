@@ -9,11 +9,13 @@ import (
 	"strings"
 	"path/filepath"
 	"os"
+	"time"
 )
 
 func TestIntegrationCheckTools(t *testing.T){
 	statusCh := make(chan internal.Status, 1)
-	go internal.CheckTools(statusCh)
+	commandCh := make(chan string)
+	go internal.CheckTools(statusCh, commandCh)
 
 	Loop:
 		for {
@@ -83,6 +85,45 @@ Loop2:
 			t.Errorf("Download Failed!")
 		}
 	}
+}
+
+func TestCheckBurstDB(t *testing.T){
+	t.Fail()
+	//internal.CheckBurstDB()
+}
+
+func TestStartWallet(t *testing.T){
+	statusCh := make(chan internal.Status, 1)
+	commandCh := make(chan string)
+	go internal.StartWallet(statusCh, commandCh)
+	checkArray := []bool {false, false, false, false}
+	//Timeout if it takes too long
+	timer := time.NewTicker(15 * time.Second)
+	defer timer.Stop()
+	Loop:
+	for{
+		select {
+		case <-timer.C:
+			break Loop
+		default:
+			stat := <-statusCh
+			if stat.Name == "startingWallet"{
+				checkArray[0] = true
+			}
+			if stat.Name == "walletStarted" {
+				checkArray[1] = true
+			}
+			if stat.Name == "stoppingWallet" {
+				checkArray[2] = true
+			}
+			if stat.Name == "walletStopped" {
+				checkArray[3] = true
+				break Loop
+			}
+		}
+	}
+	checkMask :=[]bool {true, true, true, true}
+	AssertEqual(t, checkArray, checkMask)
 }
 
 // AssertEqual checks if values are equal

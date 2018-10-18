@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"io/ioutil"
 	"strings"
+	"bufio"
 )
 
 type Status struct {
@@ -30,7 +31,7 @@ var (
 	}
 )
 
-func CheckTools(statusCh chan Status) {
+func CheckTools(statusCh chan Status, commandCh chan string) {
 	//set logs
 	os.Remove(toolPath + "startup.log")
 	logFile, _ := os.OpenFile(toolPath + "startup.log", os.O_WRONLY|os.O_CREATE, 0644)
@@ -49,13 +50,13 @@ func CheckTools(statusCh chan Status) {
 	}
 	stat.Name = "checkBurstDB"
 	statusCh <- stat
-	checkBurstDB()
+	CheckBurstDB()
 	stat.Name = "setupFinished"
 	statusCh <- stat
 	CheckForUpdates(statusCh)
 	stat.Name = "updaterFinished"
 	statusCh <- stat
-	StartWallet()
+	StartWallet(statusCh, commandCh)
 	stat.Name = "walletStarted"
 	statusCh <- stat
 }
@@ -84,38 +85,93 @@ func processFiles(missingFiles []string, statusCh chan Status) {
 }
 
 
-func checkBurstDB(){
-	if _, err := os.Stat(toolPath + "MariaDB/bin/setupDb.BAT"); os.IsNotExist(err) {
-		//Write the path of the .sql into the BAT file
-		file, err := ioutil.ReadFile(toolPath + "MariaDB/bin/setupDb.BAT")
-		if err != nil {
-			log.Fatal(err)
-			panic(err)
-		}
-		newContents := strings.Replace(string(file), "{PATH_TO_SQL_SCRIPT}", toolPath + "BurstWallet/init-mysql.sql", -1)
-		err = ioutil.WriteFile(toolPath + "MariaDB/bin/setupDb.BAT", []byte(newContents), 0)
-		if err != nil {
-			log.Fatal(err)
-			panic(err)
-		}
-		cmd := exec.Command(toolPath + "MariaDB/bin/setupDb.BAT")
-		cmd.Env = append(os.Environ())
-		out, err := cmd.CombinedOutput()
-		log.Print(string(out))
-		if err != nil{
-			log.Fatal(err)
-		}
+func CheckBurstDB(){
+	//Write the path of the .sql into the BAT file
+	file, err := ioutil.ReadFile(toolPath + "MariaDB/bin/setupDb.BAT")
+	if err != nil {
+		log.Fatal(err)
+		panic(err)
+	}
+	newContents := strings.Replace(string(file), "{PATH_TO_SQL_SCRIPT}", toolPath + "BurstWallet/init-mysql.sql", -1)
+	err = ioutil.WriteFile(toolPath + "MariaDB/bin/setupDb.BAT", []byte(newContents), 0)
+	if err != nil {
+		log.Fatal(err)
+		panic(err)
+	}
+	cmd := exec.Command(toolPath + "MariaDB/bin/setupDb.BAT")
+	cmd.Env = append(os.Environ())
+	out, err := cmd.CombinedOutput()
+	log.Print(string(out))
+	if err != nil{
+		log.Fatal(err)
 	}
 }
 
-func StartWallet(){
-	if _, err := os.Stat(burstCmdPath); os.IsNotExist(err) {
-		cmd := exec.Command(burstCmdPath + "burst.cmd")
-		cmd.Env = append(os.Environ())
-		out, err := cmd.CombinedOutput()
-		log.Print(string(out))
+func StartWallet(statusCh chan Status, commandCh chan string){
+	cmd := exec.Command(burstCmdPath + "burst.cmd")
+	stdout, err := cmd.StdoutPipe()
+	cmd.Env = append(os.Environ())
+	scanner := bufio.NewScanner(stdout)
+	err = cmd.Start()
+	if err != nil{
+		log.Fatal(err)
+	}
+	go monitorWallet(statusCh, commandCh, cmd, scanner)
+}
+
+func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, scanner *bufio.Scanner){
+	walletIO := make(chan string)
+	go func(walletIO chan string){
+		err := cmd.Wait()
+		log.Print("Wallet stopped.")
+		walletIO <- "walletStopped"
 		if err != nil{
 			log.Fatal(err)
+		}
+	}(walletIO)
+	fullErrString := ""
+	for{
+		select {
+		case msg:= <-commandCh:
+			if msg == "stopWallet"{
+				cmd.Process.Kill()
+			}
+		case msg:= <-walletIO:
+			if msg == "walletStopped"{
+				stat.Name = "walletStopped"
+				statusCh <- stat
+				return
+			}
+		default:
+			scanner.Scan()
+			if strings.Contains(scanner.Text(), "loadProperties"){
+				stat.Name = "walletStarting"
+				statusCh <- stat
+			}
+			if strings.Contains(scanner.Text(), "started successfully."){
+				stat.Name = "walletStarted"
+				statusCh <- stat
+			}
+			if strings.Contains(scanner.Text(),"Shutting down..."){
+				stat.Name = "walletStopping"
+				statusCh <- stat
+			}
+			if strings.Contains(scanner.Text(),"brs.statistics.StatisticsManagerImpl - handling"){
+				stat.Name = "walletLoadingChain"
+				statusCh <- stat
+			}
+			if strings.Contains(scanner.Text(),"[SEVERE]"){
+				fullErrString = ""
+				fullErrString = fullErrString + scanner.Text()
+			}
+			if strings.Contains(fullErrString,"[SEVERE]"){
+				fullErrString = fullErrString + scanner.Text()
+			}
+			if strings.Contains(scanner.Text(),"[INFO]") && strings.Contains(fullErrString,"[SEVERE]"){
+				stat.Name = "walletError"
+				stat.Message = fullErrString
+				statusCh <- stat
+			}
 		}
 	}
 }

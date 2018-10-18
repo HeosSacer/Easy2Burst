@@ -21,7 +21,7 @@ var (
 	w       *astilectron.Window
 )
 
-func startUI (statusCh chan internal.Status) {
+func startUI (statusCh chan internal.Status, commandCh chan string) {
 	// Init
 	flag.Parse()
 	astilog.FlagInit()
@@ -38,7 +38,7 @@ func startUI (statusCh chan internal.Status) {
 		Debug: debug,
 		OnWait: func(_ *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
 			w = ws[0]
-			go internal.StartUiManager(statusCh, w)
+			go internal.StartUiManager(statusCh, commandCh, w)
 			if err := bootstrap.SendMessage(w, "starting", "0%;"); err != nil {
 				astilog.Error(errors.Wrap(err, "sending check.out.menu event failed"))
 			}
