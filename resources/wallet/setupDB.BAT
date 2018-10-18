@@ -21,7 +21,8 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :: BatchGotAdmin (Run as Admin code ends)
 
-%~dp0/mysqld.exe -uroot
-%~dp0/mysql.exe -uroot < {PATH_TO_SQL_SCRIPT}
+%~dp0/mysqld.exe --install easy_db --defaults-file=%~dp0/my-medium.ini
+net start easy_db
+%~dp0/mysql.exe -uroot --port=3399 < C:\Users\Heos\AppData\Roaming\Easy2Burst\MariaDB\bin\init-easy-db.sql
 
-:: TO Replace string {PATH_TO_SQL_SCRIPT}
+:: TO Replace string C:/Users/Heos/AppData/Roaming/Easy2Burst/BurstWallet/init-mysql.sql

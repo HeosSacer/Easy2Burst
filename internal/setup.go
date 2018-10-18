@@ -5,6 +5,8 @@ import (
 	"os"
 	"log"
 	"os/exec"
+	"io/ioutil"
+	"strings"
 )
 
 type Status struct {
@@ -17,7 +19,7 @@ type Status struct {
 var (
 	toolPath = filepath.ToSlash(os.Getenv("APPDATA") + "/Easy2Burst/")
 	downloadCachePath = toolPath + "downloadCache/"
-	burstDBPath = toolPath + "BurstDB/"
+	burstCmdPath = toolPath + "BurstWallet/"
 	relevantFileNames = []string{"AppInfo.xml", "BurstWallet", "MariaDB"}
 	downloadUrl = "https://download.cryptoguru.org/burst/qbundle/Easy2Burst/"
 	stat = Status{
@@ -51,6 +53,11 @@ func CheckTools(statusCh chan Status) {
 	stat.Name = "setupFinished"
 	statusCh <- stat
 	CheckForUpdates(statusCh)
+	stat.Name = "updaterFinished"
+	statusCh <- stat
+	StartWallet()
+	stat.Name = "walletStarted"
+	statusCh <- stat
 }
 
 func checkFileExistences() []string {
@@ -78,7 +85,7 @@ func processFiles(missingFiles []string, statusCh chan Status) {
 
 
 func checkBurstDB(){
-	if _, err := os.Stat(burstDBPath); os.IsNotExist(err) {
+	if _, err := os.Stat(toolPath + "MariaDB/bin/setupDb.BAT"); os.IsNotExist(err) {
 		//Write the path of the .sql into the BAT file
 		file, err := ioutil.ReadFile(toolPath + "MariaDB/bin/setupDb.BAT")
 		if err != nil {
@@ -101,3 +108,14 @@ func checkBurstDB(){
 	}
 }
 
+func StartWallet(){
+	if _, err := os.Stat(burstCmdPath); os.IsNotExist(err) {
+		cmd := exec.Command(burstCmdPath + "burst.cmd")
+		cmd.Env = append(os.Environ())
+		out, err := cmd.CombinedOutput()
+		log.Print(string(out))
+		if err != nil{
+			log.Fatal(err)
+		}
+	}
+}
