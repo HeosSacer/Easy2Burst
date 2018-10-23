@@ -121,7 +121,7 @@ func StartWallet(statusCh chan Status, commandCh chan string){
 	cmd := exec.Command("java", "-cp", "burst.jar;conf", "brs.Burst")
 	cmd.Dir = burstCmdPath
 	cmd.Env = append(os.Environ())
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := cmd.StderrPipe()
 	if err != nil{
 		log.Fatal(err)
 	}
@@ -131,11 +131,11 @@ func StartWallet(statusCh chan Status, commandCh chan string){
 	if err != nil{
 		log.Fatal(err)
 	}
-	reader := bufio.NewReader(stdout)
+	reader := bufio.NewScanner(stdout)
 	go monitorWallet(statusCh, commandCh, cmd, reader)
 }
 
-func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, reader *bufio.Reader){
+func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, scanner *bufio.Scanner){
 	walletIO := make(chan string)
 	go func(walletIO chan string){
 		defer cmd.Process.Signal(os.Interrupt)
@@ -147,7 +147,6 @@ func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, r
 		}
 	}(walletIO)
 	fullErrString := ""
-	fmt.Print(cmd.Process.Pid)
 
 	for{
 		select {
@@ -175,12 +174,8 @@ func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, r
 				return
 			}
 		default:
-			p := make([]byte, 32)
-			_, err := reader.Read(p)
-			if err != nil{
-				log.Print(err)
-			}
-			scannerText := string(p)
+			scanner.Scan()
+			scannerText := scanner.Text()
 			if scannerText != ""{
 				fmt.Printf(scannerText + "\n")
 			}

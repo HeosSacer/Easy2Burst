@@ -136,8 +136,7 @@ func TestStartWallet(t *testing.T){
 			select {
 			case <-timer.C:
 				break Loop2
-			case <-statusCh:
-				stat := <-statusCh
+			case stat := <-statusCh:
 				if stat.Name == "walletStopped" {
 					checkArray[3] = true
 					break Loop2
