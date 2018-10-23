@@ -18,7 +18,7 @@ The easy to start wallet for burst.
 
 - [x] automatic updater (updates everything in the background and applies updates at application restart)
 - [x] fancy ui
-- [ ] integration of burst-wallet
+- [x] integration of burst-wallet
 - [ ] impementation of fast blockchain bootstrap
 - [ ] beta release and community outreach
 - [ ] crash reports to accelerate wallet development
