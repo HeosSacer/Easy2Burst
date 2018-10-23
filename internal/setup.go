@@ -131,27 +131,29 @@ func StartWallet(statusCh chan Status, commandCh chan string){
 	if err != nil{
 		log.Fatal(err)
 	}
-	reader := bufio.NewScanner(stdout)
+	//reader := bufio.NewScanner(stdout)
+	reader := bufio.NewReader(stdout)
 	go monitorWallet(statusCh, commandCh, cmd, reader)
 }
 
-func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, scanner *bufio.Scanner){
+func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, reader *bufio.Reader){
 	walletIO := make(chan string)
 	go func(walletIO chan string){
 		defer cmd.Process.Signal(os.Interrupt)
 		err := cmd.Wait()
 		log.Print("Wallet stopped.")
 		walletIO <- "walletStopped"
-		if err != nil{
+		if err != nil {
 			log.Fatal(err)
 		}
+		return
 	}(walletIO)
 	fullErrString := ""
 
 	for{
 		select {
-		case msg:= <-commandCh:
-			if msg == "stopWallet"{
+		case msg1:= <-commandCh:
+			if msg1 == "stopWallet"{
 				timer := time.NewTicker(10 * time.Second)
 				stat.Name = "walletStopping"
 				statusCh <- stat
@@ -159,7 +161,7 @@ func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, s
 					select {
 					case <- timer.C:
 						cmd.Process.Kill()  //really bad, don't do that!
-						stat.Name = "walletStoppedWithKill"
+						stat.Name = "walletStopped"
 						statusCh <- stat
 						return
 					default:
@@ -167,19 +169,22 @@ func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, s
 					}
 				}
 			}
-		case msg:= <-walletIO:
-			if msg == "walletStopped"{
+		case msg2:= <-walletIO:
+			if msg2 == "walletStopped"{
 				stat.Name = "walletStopped"
 				statusCh <- stat
 				return
 			}
 		default:
-			scanner.Scan()
-			scannerText := scanner.Text()
+			out, _, err := reader.ReadLine()
+			if err != nil{
+				log.Fatal(err)
+			}
+			scannerText := string(out)
 			if scannerText != ""{
 				fmt.Printf(scannerText + "\n")
 			}
-			if strings.Contains(scannerText, "brs.db.sql.Db - Using"){
+			if strings.Contains(scannerText, "brs.db.sql.Db"){
 				stat.Name = "walletStarting"
 				statusCh <- stat
 			}

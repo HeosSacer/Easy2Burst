@@ -22,8 +22,6 @@ func StartUiManager(statusCh chan Status, command chan string, window *astilectr
 		for{
 			status := <-statusCh
 			switch status.Name {
-			case "setupFinished":
-				//TODO
 			case "fatalError":
 				break ControlLoop
 			default:

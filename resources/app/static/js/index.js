@@ -36,7 +36,7 @@ let index = {
                 case "walletStarted":
                     var mainView = document.getElementById("mainScreen");
                     var startButton = document.getElementById("StartButton");
-                    mainView.src = "http://127.0.0.1:8125";
+                    mainView.src = "http://127.0.0.1:8125/index.html";
                     startButton.innerText = "Stop Wallet";
                     startButton.className = "btn btn-outline-warning";
                     break;

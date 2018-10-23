@@ -2,15 +2,16 @@ package tests
 
 import (
 	"testing"
+	"fmt"
+	"path/filepath"
+	"os"
 	"time"
 	"reflect"
 	"io/ioutil"
-	"fmt"
 	"strings"
 	"github.com/HeosSacer/Easy2Burst/internal"
 )
 
-/*
 func TestIntegrationCheckTools(t *testing.T){
 	statusCh := make(chan internal.Status, 1)
 	commandCh := make(chan string)
@@ -90,23 +91,22 @@ func TestCheckBurstDB(t *testing.T){
 	t.Fail()
 	//internal.CheckBurstDB()
 }
-*/
-func TestStartWallet(t *testing.T){
+
+func TestStartWallet(t *testing.T) {
 	statusCh := make(chan internal.Status, 1)
 	commandCh := make(chan string)
 	go internal.StartWallet(statusCh, commandCh)
-	checkArray := []bool {false, false, false, false}
+	checkArray := []bool{false, false, true, false}
 	//Timeout if it takes too long
-	stoppedRegular := false
-	timer := time.NewTicker(30 * time.Second)
+	timer := time.NewTicker(15 * time.Second)
 	defer timer.Stop()
-	Loop:
-	for{
+Loop:
+	for {
 		select {
 		case <-timer.C:
-			commandCh <- "stopWallet"
 			break Loop
 		case stat := <-statusCh:
+			fmt.Printf("~~~\n===TEST==>Received %s from wallet\n~~~\n", stat.Name)
 			if stat.Name == "walletStarting" {
 				checkArray[0] = true
 			}
@@ -119,34 +119,23 @@ func TestStartWallet(t *testing.T){
 			}
 			if stat.Name == "walletStopped" {
 				checkArray[3] = true
-				stoppedRegular = true
 				break Loop
 			}
-			if stat.Name == "walletError"{
+			if stat.Name == "walletError" {
 				fmt.Print(stat.Message)
 				t.Fail()
-			}
-		default:
-		}
-	}
-	if stoppedRegular == false{
-		timer = time.NewTicker(5 * time.Second)
-	Loop2:
-		for {
-			select {
-			case <-timer.C:
-				break Loop2
-			case stat := <-statusCh:
-				if stat.Name == "walletStopped" {
-					checkArray[3] = true
-					break Loop2
-				}
 			}
 		}
 	}
 
-	checkMask :=[]bool {true, true, true, true}
-	AssertEqual(t, checkArray, checkMask)
+	for i := 0; i < 4; i++ {
+		if !checkArray[i] {
+			t.Errorf("Error at %v", i)
+			if i == 3{
+				commandCh <- "stopWallet"
+			}
+		}
+	}
 }
 
 // AssertEqual checks if values are equal
