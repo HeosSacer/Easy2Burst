@@ -118,7 +118,7 @@ func StartWallet(statusCh chan Status, commandCh chan string){
 			statusCh <- stat
 		}
 	}
-	cmd := exec.Command("java", "-cp", "burst.jar;conf", "brs.Burst")
+	cmd := exec.Command("javaw", "-cp", "burst.jar;conf", "brs.Burst")
 	cmd.Dir = burstCmdPath
 	cmd.Env = append(os.Environ())
 	stdout, err := cmd.StderrPipe()
@@ -154,7 +154,7 @@ func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, r
 		select {
 		case msg1:= <-commandCh:
 			if msg1 == "stopWallet"{
-				timer := time.NewTicker(10 * time.Second)
+				timer := time.NewTicker(5 * time.Second)
 				stat.Name = "walletStopping"
 				statusCh <- stat
 				for{

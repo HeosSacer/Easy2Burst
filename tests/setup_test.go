@@ -93,17 +93,18 @@ func TestCheckBurstDB(t *testing.T){
 }
 
 func TestStartWallet(t *testing.T) {
-	statusCh := make(chan internal.Status, 1)
-	commandCh := make(chan string)
+	statusCh := make(chan internal.Status, 10)
+	commandCh := make(chan string, 10)
 	go internal.StartWallet(statusCh, commandCh)
 	checkArray := []bool{false, false, true, false}
 	//Timeout if it takes too long
-	timer := time.NewTicker(15 * time.Second)
+	timer := time.NewTicker(30 * time.Second)
 	defer timer.Stop()
 Loop:
 	for {
 		select {
 		case <-timer.C:
+			fmt.Printf("~~~\n===TEST==>TIMEOUT FOR WALLET INIT")
 			break Loop
 		case stat := <-statusCh:
 			fmt.Printf("~~~\n===TEST==>Received %s from wallet\n~~~\n", stat.Name)
@@ -113,6 +114,7 @@ Loop:
 			if stat.Name == "walletStarted" {
 				checkArray[1] = true
 				commandCh <- "stopWallet"
+				fmt.Print("~~~\n===TEST==>Sended Wallet Stop\n~~~\n")
 			}
 			if stat.Name == "walletStopping" {
 				checkArray[2] = true
@@ -131,9 +133,7 @@ Loop:
 	for i := 0; i < 4; i++ {
 		if !checkArray[i] {
 			t.Errorf("Error at %v", i)
-			if i == 3{
-				commandCh <- "stopWallet"
-			}
+			t.Fail()
 		}
 	}
 }
