@@ -40,6 +40,13 @@ let index = {
                     startButton.innerText = "Stop Wallet";
                     startButton.className = "btn btn-outline-warning";
                     break;
+                case "walletStopped":
+                    var mainView = document.getElementById("mainScreen");
+                    var startButton = document.getElementById("StartButton");
+                    mainView.src = "stoppedscreen.html";
+                    startButton.innerText = "Start Wallet";
+                    startButton.className = "btn btn-outline-success";
+                    break;
             }
         });
     },
