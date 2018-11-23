@@ -96,7 +96,7 @@ func TestStartWallet(t *testing.T) {
 	statusCh := make(chan internal.Status, 10)
 	commandCh := make(chan string, 10)
 	go internal.StartWallet(statusCh, commandCh)
-	checkArray := []bool{false, false, true, false}
+	checkArray := []bool{false, false, false, false}
 	//Timeout if it takes too long
 	timer := time.NewTicker(30 * time.Second)
 	defer timer.Stop()
@@ -129,7 +129,6 @@ Loop:
 			}
 		}
 	}
-
 	for i := 0; i < 4; i++ {
 		if !checkArray[i] {
 			t.Errorf("Error at %v", i)

@@ -2,7 +2,9 @@ package internal
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -40,105 +42,83 @@ func StartWallet(statusCh chan Status, commandCh chan string) {
 			statusCh <- stat
 		}
 	}
-	cmd := exec.Command("javaw", "-cp", "burst.jar;conf", "brs.Burst")
+	ctx := context.WithValue(context.Background(), "language", "javaw")
+	cmd := exec.CommandContext(ctx,"javaw", "-Ddev=true", "-cp", "burst.jar;conf", "brs.Burst")
 	cmd.Dir = burstCmdPath
 	cmd.Env = append(os.Environ())
+	cmd.Env = append(cmd.Env)
 	stdout, err := cmd.StderrPipe()
 	if err != nil {
 		log.Fatal(err)
 	}
+	stdin, _ := cmd.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 	time.Sleep(1 * time.Second)
-	//brsLog, err := os.OpenFile(burstCmdPath + "/brs.log", os.O_RDONLY, 0644)
 	err = cmd.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
-	//reader := bufio.NewScanner(stdout)
 	reader := bufio.NewReader(stdout)
-	go monitorWallet(statusCh, commandCh, cmd, reader)
+	go monitorWallet(statusCh, commandCh, cmd, reader, stdin)
 }
 
-func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, reader *bufio.Reader) {
-	walletIO := make(chan string)
-	go func(walletIO chan string) {
-		defer cmd.Process.Signal(os.Interrupt)
-		err := cmd.Wait()
-		log.Print("Wallet stopped.")
-		walletIO <- "walletStopped"
-		if err != nil {
-			log.Fatal(err)
-		}
-		return
-	}(walletIO)
+func monitorWallet(statusCh chan Status, commandCh chan string, cmd *exec.Cmd, reader *bufio.Reader, stdin io.WriteCloser) {
 	go func() {
 		for {
 			msg1 := <-commandCh
 			fmt.Printf("Wallet received %s", msg1)
 			if msg1 == "stopWallet" {
-				timer := time.NewTicker(5 * time.Second)
-				stat.Name = "walletStopping"
-				statusCh <- stat
-				for {
-					select {
-					case <-timer.C:
-						cmd.Process.Kill() //really bad, don't do that!
-						stat.Name = "walletStopped"
-						statusCh <- stat
-						return
-					default:
-						cmd.Process.Signal(os.Interrupt) //should not work on windows, but sometimes does?
-					}
-				}
+				stdin.Write([]byte("shutdown\r\n"))
+				stdin.Close()
+				return
 			}
 		}
 	}()
 	fullErrString := ""
 
 	for {
-		select {
-		case msg1 := <-walletIO:
-			if msg1 == "walletStopped" {
+		out, _, err := reader.ReadLine()
+		if err != nil{
+			if strings.Contains(err.Error(), "read |0: file already closed") || err == io.EOF{
 				stat.Name = "walletStopped"
 				statusCh <- stat
 				return
 			}
-		default:
-			out, _, err := reader.ReadLine()
-			if err != nil {
-				log.Fatal(err)
-			}
-			scannerText := string(out)
-			if scannerText != "" {
-				fmt.Printf(scannerText + "\n")
-			}
-			if strings.Contains(scannerText, "brs.db.sql.Db") {
-				stat.Name = "walletStarting"
-				statusCh <- stat
-			}
-			if strings.Contains(scannerText, "started successfully.") {
-				stat.Name = "walletStarted"
-				statusCh <- stat
-			}
-			if strings.Contains(scannerText, "Shutting down...") {
-				stat.Name = "walletStopping"
-				statusCh <- stat
-			}
-			if strings.Contains(scannerText, "brs.statistics.StatisticsManagerImpl - handling") {
-				stat.Name = "walletLoadingChain"
-				statusCh <- stat
-			}
-			if strings.Contains(scannerText, "[SEVERE]") {
-				fullErrString = ""
-				fullErrString = fullErrString + scannerText
-			}
-			if strings.Contains(fullErrString, "[SEVERE]") {
-				fullErrString = fullErrString + scannerText
-			}
-			if strings.Contains(scannerText, "[INFO]") && strings.Contains(fullErrString, "[SEVERE]") {
-				stat.Name = "walletError"
-				stat.Message = fullErrString
-				statusCh <- stat
-			}
+			log.Print(err)
+		}
+		scannerText := string(out)
+		if scannerText != "" {
+			fmt.Printf(scannerText + "\n")
+		}
+		if strings.Contains(scannerText, "brs.db.sql.Db") {
+			stat.Name = "walletStarting"
+			statusCh <- stat
+		}
+		if strings.Contains(scannerText, "started successfully.") {
+			stat.Name = "walletStarted"
+			statusCh <- stat
+		}
+		if strings.Contains(scannerText, "received command: >shutdown<") {
+			stat.Name = "walletStopping"
+			statusCh <- stat
+		}
+		if strings.Contains(scannerText, "brs.statistics.StatisticsManagerImpl - handling") {
+			stat.Name = "walletLoadingChain"
+			statusCh <- stat
+		}
+		if strings.Contains(scannerText, "[SEVERE]") {
+			fullErrString = ""
+			fullErrString = fullErrString + scannerText
+		}
+		if strings.Contains(fullErrString, "[SEVERE]") {
+			fullErrString = fullErrString + scannerText
+		}
+		if strings.Contains(scannerText, "[INFO]") && strings.Contains(fullErrString, "[SEVERE]") {
+			stat.Name = "walletError"
+			stat.Message = fullErrString
+			statusCh <- stat
 		}
 	}
 }
