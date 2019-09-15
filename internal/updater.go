@@ -135,7 +135,7 @@ Loop:
 			stat.Name = "downloadMissing"
 			stat.Message = fmt.Sprintf("Downloading %s", filename)
 			stat.Progress = fmt.Sprintf("%.2f%%", 100*resp.Progress())
-			stat.Size = fmt.Sprintf("%.2f", float64(resp.Size)/1000000)
+			stat.Size = fmt.Sprintf("%.2f", float64(resp.Size())/1000000)
 			statusCh <- stat
 
 		case <-resp.Done:
